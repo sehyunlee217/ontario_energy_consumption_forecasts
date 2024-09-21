@@ -23,8 +23,12 @@ library(forecast)
 
 # Datasets
 ontario_temps <- read_csv("data/tg_mean.csv")
-newborns_kr <- ontario94_02 <- read_csv("data/HourlyDemands_1994-2002.csv")
+ontario94_02 <- read_csv("data/HourlyDemands_1994-2002.csv")
 ontario02_23 <- read_csv("data/ontario_electricity_demand.csv")
+energy_dem_2023 <- read_csv("data/PUB_Demand_2023.csv")
+energy_dem_2024 <- read_csv("data/PUB_Demand_2024.csv")
+
+
 ```
 
 ```{r}
@@ -160,7 +164,7 @@ elec_demand |>
 
 ```
 
-The decomposition of historical temperatures shows a **strong upward trend in temperatures, highlighting a clear increase over time**. In addition, the decomposition reveals **strong seasonality**, with consistent patterns of temperature variation throughout the year. Alongside these observations, **expert forecasts for future temperatures are widely available**, driven by extensive research from climate scientists using advanced models to predict future temperature trends and their impacts.
+The decomposition of historical temperatures shows a **strong upward trend in temperatures**, highlighting a clear increase over time. In addition, the decomposition reveals **strong seasonality**, with consistent patterns of temperature variation throughout the year. Alongside these observations, expert forecasts for future temperatures are widely available, driven by extensive research from climate scientists using advanced models to predict future temperature trends and their impacts.
 
 ## Historical Data on Ontario Energy Consumptions
 
@@ -186,7 +190,7 @@ elec_demand |>
   theme_ipsum() + labs(x = "Temperature (C)", y = "Monthly Energy Consumption (GW)")
 ```
 
-In fact, examining the relationship between temperature and monthly energy consumption reveals that higher temperatures in the summer lead to increased energy use due to air conditioning, while colder winters also drive up consumption for heating. The scatterplot suggests a **non-linear relationship between temperature and energy demand**, suggesting that **historical temperature data could be a valuable predictor for forecasting future monthly energy consumption**.
+In fact, examining the relationship between temperature and monthly energy consumption reveals that higher temperatures in the summer lead to increased energy use due to air conditioning, while colder winters also drive up consumption for heating. The scatterplot suggests a **non-linear relationship between temperature and energy demand**, suggesting that historical temperature data could be a valuable predictor for forecasting future monthly energy consumption.
 
 ## Model Selection for Temperature
 
@@ -331,7 +335,7 @@ fit_auto_arima_g <- glance(fit_auto_arima) |> select(.model, AIC, AICc, BIC)
 ```
 
 $$
-(1 - \phi_{1}B -  \phi_{2}B^{2})(1 - \phi_{1}B^{12})(1- B^{12}) y_{t} = x_{temperature} +(1 + \theta_{1}B +  \theta_{2}B^{2})(1 + \theta_{1}B^{12})\epsilon_{t}
+(1 - \phi_{1}B -  \phi_{2}B^{2})(1 - \phi_{1}B^{12})(1- B^{12}) y_{t} = x_{temperature} +(1 + \theta_{1}B +  \theta_{2}B^{2} + \theta_{3}B^{3})(1 + \theta_{1}B^{12})\epsilon_{t}
 $$
 Utilizing the forecasts generated for temperatures, we can generate forecasts for the monthly energy consumptions using this dynamic regression model as below. 
 
@@ -340,6 +344,8 @@ fc1 <- forecast(fit_dy_reg, ontario_temps_fc_2years)
 
 fc1 |> autoplot(elec_demand) + 
     theme_ipsum() + labs(x = "Temperature (C)", y = "Monthly Demand (MW)", title ="2Y Forecasts with Dynamic Regression")
+
+fc1
 ```
 
 ### Cross-Validation 
@@ -352,8 +358,53 @@ fc_acc |>
   select(.model, MAE, RMSE, MAPE, RMSSE)
 
 ```
+## Comparing with Actual Energy Consumptions
+
+```{r}
+energy_dem_23_24 <- energy_dem_2023 |> 
+  rbind(energy_dem_2024) |> 
+  select(Date, `Ontario Demand`) |> 
+  mutate(
+    hourly_demand = `Ontario Demand`
+  ) |> 
+  group_by(Date) |> 
+  summarize(
+    daily_demand = sum(hourly_demand),
+  ) |> 
+  mutate(
+    Month = yearmonth(Date)
+  ) |> 
+  group_by(Month) |> 
+  summarize(
+    monthly_demand = sum(daily_demand)
+  ) |> 
+  mutate(
+    monthly_demand = monthly_demand
+  ) |> 
+  as_tsibble(index = Month) |> 
+  filter(Month < yearmonth("2024 Sep") & Month > yearmonth("2023 April") )
+
+fc_future <- fc1 |> 
+  filter(Month < yearmonth("2024 Sep") & Month > yearmonth("2023 April")) 
+
+fc2_future <- fc2 |> 
+  filter(Month < yearmonth("2024 Sep") & Month > yearmonth("2023 April")) 
+
+fc_future |> 
+  autoplot() + 
+  autolayer(energy_dem_23_24) + 
+  theme_ipsum() + 
+  labs(title = "Actual Energy Consumption v.s Forecasted Consumptions", y = "Energy Consumption (MW)")
+
+accuracy(fc_future, energy_dem_23_24) |> 
+  select(.model, MAE, RMSE, MAPE, RMSSE)
+
+```
+
+Comparing the forecasts from April 2023 to August 2024, where the black line represents the actual energy consumption and the blue intervals represent our model’s forecasts, we can observe that the **forecasts accurately predict the highest energy demands for July 2023, January 2024, and July 2024**. These peaks align with the actual consumption trends from the past year. Additionally, the close fit between the actual data and our forecast intervals further **demonstrates the model’s strong predictive capability**.
+
 ## Results
 
 As we have demonstrated that including temperature as an explanatory variable improves the model, data on temperature changes could enhance the accuracy of forecasts for monthly energy consumption in Ontario. Additionally, **reliable and frequently updated expert temperature forecasts allow for adjustments in energy consumption predictions based on significant changes in future temperatures**.
 
-Having accurate forecasts for energy consumption is crucial, as they can **inform planning for maintenance and repairs of electricity-generating facilities**. Moreover, if we have access to monthly supply data, information on energy storage, and costs associated with energy generation at specific times in Ontario, **this scenario could be framed as an optimization problem**. **Utilizing dynamic programming, we could optimize production and reduce costs for energy generation in the province**.
+Having accurate forecasts for energy consumption is crucial, as they can **inform planning for maintenance and repairs of electricity-generating facilities**. Moreover, if we have access to monthly supply data, information on energy storage, and costs associated with energy generation at specific times in Ontario, **this scenario could be framed as an optimization problem**. Utilizing dynamic programming or modeling this scenario as a Markov Decision Process, we could optimize production and reduce costs for energy generation in the province.

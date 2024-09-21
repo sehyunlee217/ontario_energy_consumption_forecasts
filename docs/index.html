@@ -160,7 +160,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>The decomposition of historical temperatures shows a <strong>strong upward trend in temperatures, highlighting a clear increase over time</strong>. In addition, the decomposition reveals <strong>strong seasonality</strong>, with consistent patterns of temperature variation throughout the year. Alongside these observations, <strong>expert forecasts for future temperatures are widely available</strong>, driven by extensive research from climate scientists using advanced models to predict future temperature trends and their impacts.</p>
+<p>The decomposition of historical temperatures shows a <strong>strong upward trend in temperatures</strong>, highlighting a clear increase over time. In addition, the decomposition reveals <strong>strong seasonality</strong>, with consistent patterns of temperature variation throughout the year. Alongside these observations, expert forecasts for future temperatures are widely available, driven by extensive research from climate scientists using advanced models to predict future temperature trends and their impacts.</p>
 </section>
 <section id="historical-data-on-ontario-energy-consumptions" class="level2">
 <h2 class="anchored" data-anchor-id="historical-data-on-ontario-energy-consumptions">Historical Data on Ontario Energy Consumptions</h2>
@@ -183,7 +183,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>In fact, examining the relationship between temperature and monthly energy consumption reveals that higher temperatures in the summer lead to increased energy use due to air conditioning, while colder winters also drive up consumption for heating. The scatterplot suggests a <strong>non-linear relationship between temperature and energy demand</strong>, suggesting that <strong>historical temperature data could be a valuable predictor for forecasting future monthly energy consumption</strong>.</p>
+<p>In fact, examining the relationship between temperature and monthly energy consumption reveals that higher temperatures in the summer lead to increased energy use due to air conditioning, while colder winters also drive up consumption for heating. The scatterplot suggests a <strong>non-linear relationship between temperature and energy demand</strong>, suggesting that historical temperature data could be a valuable predictor for forecasting future monthly energy consumption.</p>
 </section>
 <section id="model-selection-for-temperature" class="level2">
 <h2 class="anchored" data-anchor-id="model-selection-for-temperature">Model Selection for Temperature</h2>
@@ -326,7 +326,7 @@ window.Quarto = {
 <p>Similar to the interpretation for temperature, the <strong>ACF plot shows a drop around lag 3, indicating an MA(3)</strong> component, along with a <strong>peak at lag 12 that suggests an SMA(1)</strong> component. In the <strong>PACF plot, we observe a drop around lag 2, pointing to an AR(2)</strong> component, while the <strong>spike at lag 12 indicates a SAR(1)</strong> component.</p>
 <p>Now, we will fit a dynamic regression model with temperatures being an extraneous variable. The following model can be written as below:</p>
 <p><span class="math display">\[
-(1 - \phi_{1}B -  \phi_{2}B^{2})(1 - \phi_{1}B^{12})(1- B^{12}) y_{t} = x_{temperature} +(1 + \theta_{1}B +  \theta_{2}B^{2})(1 + \theta_{1}B^{12})\epsilon_{t}
+(1 - \phi_{1}B -  \phi_{2}B^{2})(1 - \phi_{1}B^{12})(1- B^{12}) y_{t} = x_{temperature} +(1 + \theta_{1}B +  \theta_{2}B^{2} + \theta_{3}B^{3})(1 + \theta_{1}B^{12})\epsilon_{t}
 \]</span> Utilizing the forecasts generated for temperatures, we can generate forecasts for the monthly energy consumptions using this dynamic regression model as below.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -335,6 +335,23 @@ window.Quarto = {
 <p><img src="index_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A fable: 24 x 5 [1M]
+# Key:     .model [1]
+   .model                                Month      monthly_demand  .mean   Temp
+   &lt;chr&gt;                                 &lt;mth&gt;              &lt;dist&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+ 1 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Apr   N(1e+07, 1.6e+11) 1.02e7  9.10 
+ 2 ARIMA(monthly_demand ~ 1 + Temp +… 2023 May   N(1e+07, 1.9e+11) 1.04e7 14.1  
+ 3 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Jun N(1.1e+07, 2.1e+11) 1.10e7 19.0  
+ 4 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Jul N(1.2e+07, 2.3e+11) 1.24e7 22.8  
+ 5 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Aug N(1.2e+07, 2.3e+11) 1.23e7 22.1  
+ 6 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Sep N(1.1e+07, 2.4e+11) 1.07e7 18.1  
+ 7 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Oct N(1.1e+07, 2.4e+11) 1.05e7 12.1  
+ 8 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Nov N(1.1e+07, 2.5e+11) 1.10e7  6.05 
+ 9 ARIMA(monthly_demand ~ 1 + Temp +… 2023 Dec N(1.2e+07, 2.5e+11) 1.21e7  0.792
+10 ARIMA(monthly_demand ~ 1 + Temp +… 2024 Jan N(1.3e+07, 2.5e+11) 1.27e7 -3.01 
+# ℹ 14 more rows</code></pre>
 </div>
 </div>
 </section>
@@ -352,10 +369,29 @@ window.Quarto = {
 </div>
 </section>
 </section>
+<section id="comparing-with-actual-energy-consumptions" class="level2">
+<h2 class="anchored" data-anchor-id="comparing-with-actual-energy-consumptions">Comparing with Actual Energy Consumptions</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 5
+  .model                                                  MAE   RMSE  MAPE RMSSE
+  &lt;chr&gt;                                                 &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 ARIMA(monthly_demand ~ 1 + Temp + pdq(2, 0, 3) + PD… 2.83e5 3.41e5  2.42   NaN</code></pre>
+</div>
+</div>
+<p>Comparing the forecasts from April 2023 to August 2024, where the black line represents the actual energy consumption and the blue intervals represent our model’s forecasts, we can observe that the <strong>forecasts accurately predict the highest energy demands for July 2023, January 2024, and July 2024</strong>. These peaks align with the actual consumption trends from the past year. Additionally, the close fit between the actual data and our forecast intervals further <strong>demonstrates the model’s strong predictive capability</strong>.</p>
+</section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
 <p>As we have demonstrated that including temperature as an explanatory variable improves the model, data on temperature changes could enhance the accuracy of forecasts for monthly energy consumption in Ontario. Additionally, <strong>reliable and frequently updated expert temperature forecasts allow for adjustments in energy consumption predictions based on significant changes in future temperatures</strong>.</p>
-<p>Having accurate forecasts for energy consumption is crucial, as they can <strong>inform planning for maintenance and repairs of electricity-generating facilities</strong>. Moreover, if we have access to monthly supply data, information on energy storage, and costs associated with energy generation at specific times in Ontario, <strong>this scenario could be framed as an optimization problem</strong>. <strong>Utilizing dynamic programming, we could optimize production and reduce costs for energy generation in the province</strong>.</p>
+<p>Having accurate forecasts for energy consumption is crucial, as they can <strong>inform planning for maintenance and repairs of electricity-generating facilities</strong>. Moreover, if we have access to monthly supply data, information on energy storage, and costs associated with energy generation at specific times in Ontario, <strong>this scenario could be framed as an optimization problem</strong>. Utilizing dynamic programming or modeling this scenario as a Markov Decision Process, we could optimize production and reduce costs for energy generation in the province.</p>
 
 
 </section>
