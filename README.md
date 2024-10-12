@@ -1,6 +1,7 @@
 ## [Live R Quarto Document](https://sehyunlee217.github.io/ontario_energy_consumption_forecasts/)
 ![Screenshot 2024-09-20 at 20 55 18](https://github.com/user-attachments/assets/e3fc99d6-3281-4807-8d9b-f9e9b3e07289)
 
+## Please click [here](https://sehyunlee217.github.io/ontario_energy_consumption_forecasts/) to access the live Quarto Document
 ## Forecasts of Ontario's Monthly Energy Consumptions
 - Investigating the relationship between temperature and monthly energy consumption in Ontario, modeling dynamic regression model with ARIMA. 
 
